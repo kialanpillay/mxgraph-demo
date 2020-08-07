@@ -37,13 +37,13 @@
   border-color: #8000ff;
 }
 .sidebar {
-  font-size: 12px;
+  font-size: 20px;
   text-align: center;
   overflow: visible;
   margin: 0;
   padding: 0;
   position: absolute;
-  width: 120px;
+  width: 160px;
   left: 0;
   top: 0;
   right: 0;
@@ -61,6 +61,12 @@
 }
 .sidebar li.task {
   border: 1px solid #80c6ee;
+  cursor: pointer;
+}
+.sidebar img.task {
+  width: 40px;
+  margin: 0 3rem 0 0;
+  margin-bottom: 6px;
   cursor: pointer;
 }
 .taskWrapper .taskTitle {

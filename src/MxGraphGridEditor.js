@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import ReactDOM from "react-dom";
-import CreateTaskNode from "./component/CreateTaskNode";
 import "./common.css";
 import "./mxgraph.css";
 import {
@@ -36,7 +35,7 @@ import {
   mxGraphModel,
   mxPerimeter,
   mxCompactTreeLayout,
-  mxCellOverlay
+  mxCellOverlay,
 } from "mxgraph-js";
 // xml-< json
 class mxCellAttributeChange {
@@ -64,7 +63,7 @@ class mxCellAttributeChange {
 }
 class JsonCodec extends mxObjectCodec {
   constructor() {
-    super(value => {});
+    super((value) => {});
   }
   encode(value) {
     const xmlDoc = mxUtils.createXmlDocument();
@@ -76,11 +75,11 @@ class JsonCodec extends mxObjectCodec {
   }
   decode(model) {
     return Object.keys(model.cells)
-      .map(iCell => {
+      .map((iCell) => {
         const currentCell = model.getCell(iCell);
         return currentCell.value !== undefined ? currentCell : null;
       })
-      .filter(item => item !== null);
+      .filter((item) => item !== null);
   }
 }
 
@@ -94,7 +93,7 @@ class mxGraphGridAreaEditor extends Component {
       dragElt: null,
       createVisile: false,
       currentNode: null,
-      currentTask: ""
+      currentTask: "",
     };
     this.LoadGraph = this.LoadGraph.bind(this);
   }
@@ -102,75 +101,6 @@ class mxGraphGridAreaEditor extends Component {
     this.LoadGraph();
   }
 
-  //  渲染json为graph
-  renderJSON = (dataModel, graph) => {
-    const jsonEncoder = new JsonCodec();
-    let vertices = {};
-    const parent = graph.getDefaultParent();
-    graph.getModel().beginUpdate(); // Adds cells to the model in a single step
-    try {
-      dataModel &&
-        dataModel.graph.map(node => {
-          if (node.value) {
-            if (typeof node.value === "object") {
-              const xmlNode = jsonEncoder.encode(node.value);
-              vertices[node.id] = graph.insertVertex(
-                parent,
-                null,
-                xmlNode,
-                node.geometry.x,
-                node.geometry.y,
-                node.geometry.width,
-                node.geometry.height,
-                node.style
-              );
-            } else if (node.value === "Edge") {
-              graph.insertEdge(
-                parent,
-                null,
-                "Edge",
-                vertices[node.source],
-                vertices[node.target],
-                node.style
-              );
-            }
-          }
-        });
-    } finally {
-      graph.getModel().endUpdate(); // Updates the display
-    }
-  };
-
-  getJsonModel = graph => {
-    const encoder = new JsonCodec();
-    const jsonModel = encoder.decode(graph.getModel());
-    return {
-      graph: jsonModel
-    };
-  };
-
-  stringifyWithoutCircular = json => {
-    return JSON.stringify(
-      json,
-      (key, value) => {
-        if (
-          (key === "parent" || key == "source" || key == "target") &&
-          value !== null
-        ) {
-          return value.id;
-        } else if (key === "value" && value !== null && value.localName) {
-          let results = {};
-          Object.keys(value.attributes).forEach(attrKey => {
-            const attribute = value.attributes[attrKey];
-            results[attribute.nodeName] = attribute.nodeValue;
-          });
-          return results;
-        }
-        return value;
-      },
-      4
-    );
-  };
   addOverlays = (graph, cell) => {
     var overlay = new mxCellOverlay(
       new mxImage(
@@ -194,30 +124,7 @@ class mxGraphGridAreaEditor extends Component {
 
     graph.addCellOverlay(cell, overlay);
   };
-  handleCancel = () => {
-    this.setState({ createVisile: false });
-    this.state.graph.removeCells([this.state.currentNode]);
-  };
-  handleConfirm = fields => {
-    const { graph } = this.state;
-    const cell = graph.getSelectionCell();
-    this.applyHandler(graph, cell, "text", fields.taskName);
-    this.applyHandler(graph, cell, "desc", fields.taskDesc);
-    cell.setId(fields.id || 100);
-    this.setState({ createVisile: false });
-  };
-  applyHandler = (graph, cell, name, newValue) => {
-    graph.getModel().beginUpdate();
-    try {
-      const edit = new mxCellAttributeChange(cell, name, newValue);
-      // console.log(edit)
-      graph.getModel().execute(edit);
-      // graph.updateCellSize(cell);
-    } finally {
-      graph.getModel().endUpdate();
-    }
-  };
-  graphF = evt => {
+  graphF = (evt) => {
     const { graph } = this.state;
     var x = mxEvent.getClientX(evt);
     var y = mxEvent.getClientY(evt);
@@ -254,7 +161,7 @@ class mxGraphGridAreaEditor extends Component {
     const tasksDrag = ReactDOM.findDOMNode(
       this.refs.mxSidebar
     ).querySelectorAll(".task");
-    Array.prototype.slice.call(tasksDrag).forEach(ele => {
+    Array.prototype.slice.call(tasksDrag).forEach((ele) => {
       const value = ele.getAttribute("data-value");
       let ds = mxUtils.makeDraggable(
         ele,
@@ -278,7 +185,7 @@ class mxGraphGridAreaEditor extends Component {
     this.setState({
       createVisile: true,
       currentNode: graph.getSelectionCell(),
-      currentTask: value
+      currentTask: value,
     });
   };
   createPopupMenu = (graph, menu, cell, evt) => {
@@ -289,11 +196,7 @@ class mxGraphGridAreaEditor extends Component {
           mxEvent.consume(evt);
         });
       } else {
-        menu.addItem("Edit child node", null, function() {
-          // mxUtils.alert('Edit child node: ');
-          // selectionChanged(graph)
-        });
-        menu.addItem("Delete child node", null, function() {
+        menu.addItem("Delete", null, function() {
           graph.removeCells([cell]);
           mxEvent.consume(evt);
         });
@@ -325,23 +228,31 @@ class mxGraphGridAreaEditor extends Component {
         }
       }
     });
-    keyHandler.bindKey(37, function() {
-      console.log(37);
-    });
     new mxRubberband(graph);
     graph.getTooltipForCell = function(cell) {
-      return cell.getAttribute("desc");
+      return cell.getAttribute("data-value");
     };
-    var style = [];
+
+    var style = new Object();
+    style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_IMAGE;
+    style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
+    style[mxConstants.STYLE_IMAGE] = "science-24px.svg";
+    style[mxConstants.STYLE_FONTCOLOR] = "#FFFFFF";
+    style[mxConstants.STYLE_SPACING_BOTTOM] = 0;
+    graph.getStylesheet().putCellStyle("image", style);
+
+    style = new Object();
     style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
     style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
     style[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_MIDDLE;
     style[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_CENTER;
-    style[mxConstants.STYLE_FILLCOLOR] = "#C3D9FF";
-    style[mxConstants.STYLE_STROKECOLOR] = "#6482B9";
-    style[mxConstants.STYLE_FONTCOLOR] = "#774400";
-    style[mxConstants.HANDLE_FILLCOLOR] = "#80c6ee";
-    graph.getStylesheet().putDefaultVertexStyle(style);
+    style[mxConstants.STYLE_FILLCOLOR] = "sandybrown";
+    style[mxConstants.STYLE_STROKECOLOR] = "black";
+    style[mxConstants.STYLE_STROKEWIDTH] = 3;
+    style[mxConstants.STYLE_ROUNDED] = true;
+    style[mxConstants.STYLE_ARCSIZE] = 10;
+    graph.getStylesheet().putCellStyle("table", style);
+
     style = [];
     style[mxConstants.STYLE_STROKECOLOR] = "#f90";
     style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_CONNECTOR;
@@ -356,62 +267,16 @@ class mxGraphGridAreaEditor extends Component {
     graph.popupMenuHandler.factoryMethod = function(menu, cell, evt) {
       return that.createPopupMenu(graph, menu, cell, evt);
     };
-    graph.convertValueToString = function(cell) {
-      if (
-        mxUtils.isNode(cell.value) &&
-        cell.value.nodeName.toLowerCase() == "taskobject"
-      ) {
-        // Returns a DOM for the label
-        var div = document.createElement("div");
-        div.setAttribute("class", "taskWrapper");
-        div.innerHTML = `<span class='taskTitle'>${cell.getAttribute(
-          "text",
-          ""
-        )}</span>`;
-        mxUtils.br(div);
-
-        var p = document.createElement("p");
-        p.setAttribute("class", "taskName");
-        p.innerHTML = cell.getAttribute("label");
-        div.appendChild(p);
-
-        return div;
-      }
-      return "";
-    };
   };
 
   funct = (graph, evt, target, x, y, value) => {
-    var doc = mxUtils.createXmlDocument();
-    var obj = doc.createElement("TaskObject");
-    obj.setAttribute("label", value);
-    obj.setAttribute("text", "");
-    obj.setAttribute("desc", "");
-
-    //获取顶层，可以认为是父节点
     var parent = graph.getDefaultParent();
-    //parent画板父层，value值，x，y为坐标起点，width宽，height高
-    //style样式  stylename;image=imageUrl
-    let cell = graph.insertVertex(
-      parent,
-      target,
-      obj,
-      x,
-      y,
-      150,
-      60,
-      "strokeColor=#000000;strokeWidth=1;fillColor=white"
-    );
-    this.addOverlays(graph, cell, true);
+    let cell = graph.insertVertex(parent, target, "", x, y, 150, 60, "image");
+    //this.addOverlays(graph, cell, true);
     graph.setSelectionCell(cell);
     this.selectionChanged(graph, value);
-    // if (cells != null && cells.length > 0)
-    // {
-    // 	graph.scrollCellToVisible(cells[0]);
-    // 	graph.setSelectionCells(cells);
-    // }
   };
-  setLayoutSetting = layout => {
+  setLayoutSetting = (layout) => {
     layout.parallelEdgeSpacing = 10;
     layout.useBoundingBox = false;
     layout.edgeRouting = false;
@@ -421,13 +286,8 @@ class mxGraphGridAreaEditor extends Component {
     layout.isVertexMovable = function(cell) {
       return true;
     };
-    layout.localEdgeProcessing = function(node) {
-      console.log(node);
-    };
   };
-  selectionChange = (sender, evt) => {
-    // console.log(sender)
-  };
+
   settingConnection = () => {
     const { graph } = this.state;
     mxConstraintHandler.prototype.intersects = function(
@@ -464,12 +324,6 @@ class mxGraphGridAreaEditor extends Component {
         if (nearestConstraint != null) {
           this.sourceConstraint = nearestConstraint;
         }
-
-        // In case the edge style must be changed during the preview:
-        // this.edgeState.style['edgeStyle'] = 'orthogonalEdgeStyle';
-        // And to use the new edge style in the new edge inserted into the graph,
-        // update the cell style as follows:
-        //this.edgeState.cell.style = mxUtils.setStyle(this.edgeState.cell.style, 'edgeStyle', this.edgeState.style['edgeStyle']);
       }
 
       mxConnectionHandlerUpdateEdgeState.apply(this, arguments);
@@ -490,7 +344,7 @@ class mxGraphGridAreaEditor extends Component {
           new mxConnectionConstraint(new mxPoint(0.5, 0), true),
           new mxConnectionConstraint(new mxPoint(0, 0.5), true),
           new mxConnectionConstraint(new mxPoint(1, 0.5), true),
-          new mxConnectionConstraint(new mxPoint(0.5, 1), true)
+          new mxConnectionConstraint(new mxPoint(0.5, 1), true),
         ];
       }
       return null;
@@ -517,26 +371,23 @@ class mxGraphGridAreaEditor extends Component {
   initToolbar = () => {
     const that = this;
     const { graph, layout } = this.state;
-    // 放大按钮
     var toolbar = ReactDOM.findDOMNode(this.refs.toolbar);
     toolbar.appendChild(
-      mxUtils.button("zoom(+)", function(evt) {
+      mxUtils.button("Zoom(+)", function(evt) {
         graph.zoomIn();
       })
     );
-    // 缩小按钮
     toolbar.appendChild(
-      mxUtils.button("zoom(-)", function(evt) {
+      mxUtils.button("Zoom(-)", function(evt) {
         graph.zoomOut();
       })
     );
-    // 还原按钮
     toolbar.appendChild(
-      mxUtils.button("restore", function(evt) {
+      mxUtils.button("Restore", function(evt) {
         graph.zoomActual();
         const zoom = { zoomFactor: 1.2 };
         that.setState({
-          graph: { ...graph, ...zoom }
+          graph: { ...graph, ...zoom },
         });
       })
     );
@@ -549,68 +400,29 @@ class mxGraphGridAreaEditor extends Component {
     graph.getView().addListener(mxEvent.UNDO, listener);
 
     toolbar.appendChild(
-      mxUtils.button("undo", function() {
+      mxUtils.button("Undo", function() {
         undoManager.undo();
       })
     );
 
     toolbar.appendChild(
-      mxUtils.button("redo", function() {
+      mxUtils.button("Redo", function() {
         undoManager.redo();
-      })
-    );
-    toolbar.appendChild(
-      mxUtils.button("Automatic layout", function() {
-        graph.getModel().beginUpdate();
-        try {
-          that.state.layout.execute(graph.getDefaultParent());
-        } catch (e) {
-          throw e;
-        } finally {
-          graph.getModel().endUpdate();
-        }
-      })
-    );
-
-    toolbar.appendChild(
-      mxUtils.button("view XML", function() {
-        var encoder = new mxCodec();
-        var node = encoder.encode(graph.getModel());
-        mxUtils.popup(mxUtils.getXml(node), true);
-      })
-    );
-    toolbar.appendChild(
-      mxUtils.button("view JSON", function() {
-        const jsonNodes = that.getJsonModel(graph);
-        let jsonStr = that.stringifyWithoutCircular(jsonNodes);
-        localStorage.setItem("json", jsonStr);
-        that.setState({
-          json: jsonStr
-        });
-        console.log(jsonStr);
-      })
-    );
-    toolbar.appendChild(
-      mxUtils.button("render JSON", function() {
-        that.renderJSON(JSON.parse(that.state.json), graph);
       })
     );
   };
   LoadGraph(data) {
     var container = ReactDOM.findDOMNode(this.refs.divGraph);
-    // Checks if the browser is supported
     if (!mxClient.isBrowserSupported()) {
-      // Displays an error message if the browser is not supported.
       mxUtils.error("Browser is not supported!", 200, false);
     } else {
       var graph = new mxGraph(container);
       this.setState(
         {
           graph: graph,
-          dragElt: this.getEditPreview()
+          dragElt: this.getEditPreview(),
         },
         () => {
-          console.log(this);
           // layout
           const layout = new mxCompactTreeLayout(graph, false);
           this.setState({ layout });
@@ -622,94 +434,50 @@ class mxGraphGridAreaEditor extends Component {
           this.createDragElement();
           var parent = graph.getDefaultParent();
 
-          // Adds cells to the model in a single step
           graph.getModel().beginUpdate();
           try {
-            var v0 = graph.insertVertex(
+            var v1 = graph.insertVertex(
               parent,
               null,
-              "dgfgdg,",
-              120,
-              240,
-              80,
+              null,
+              300,
+              400,
+              600,
               30,
-              "shape=ellipse"
+              "table"
             );
-            var v1 = graph.insertVertex(parent, null, "Hello,", 20, 20, 80, 30);
-            var v2 = graph.insertVertex(
-              parent,
-              null,
-              "World!",
-              200,
-              150,
-              80,
-              30
-            );
-            var e1 = graph.insertEdge(parent, null, "", v1, v2);
           } finally {
-            // Updates the display
             graph.getModel().endUpdate();
           }
         }
       );
-      // Disables the built-in context menu
       mxEvent.disableContextMenu(container);
-      // Trigger event after selection
-      graph
-        .getSelectionModel()
-        .addListener(mxEvent.CHANGE, this.selectionChange);
-      var parent = graph.getDefaultParent();
     }
   }
   render() {
     return (
       <div>
-        <ul className="sidebar" ref="mxSidebar">
-          <li className="title" data-title="Task node" data-value="Task node">
-            Task node
-          </li>
-          <li
-            className="task"
-            data-title="Kafka->HDFS"
-            data-value="Channel task"
-          >
-            rectangle
-          </li>
-          <li
-            className="task"
-            data-title="A/B test task"
-            data-value="A/B test task"
-          >
-            A/Btest task
-          </li>
-          <li
-            className="task"
-            data-title="Hive->Email"
-            data-value="Report task"
-          >
-            Report task
-          </li>
-          <li className="task" data-title="Hive->Hive" data-value="HSQL task">
-            HSQL task
-          </li>
-          <li className="task" data-title="Shell task" data-value="Shell task">
-            Shell task
-          </li>
-          <li id="layout123">layout</li>
-        </ul>
+        <div>
+          <ul className="sidebar" ref="mxSidebar">
+            <li>
+              <h2>Palette</h2>
+            </li>
+            <img
+              className="task"
+              data-value="Flask"
+              src="science-24px.svg"
+            ></img>
+             <img
+              className="task"
+              data-value="Microscope"
+              src="biotech-24px.svg"
+            ></img>
+          </ul>
+        </div>
         <div className="toolbar" ref="toolbar" />
         <div className="container-wrapper">
           <div className="container" ref="divGraph" />
         </div>
-        <div className="changeInput" style={{ zIndex: 10 }} />
-        {this.state.createVisile && (
-          <CreateTaskNode
-            currentTask={this.state.currentTask}
-            visible={this.state.createVisile}
-            handleCancel={this.handleCancel}
-            handleConfirm={this.handleConfirm}
-          />
-        )}
       </div>
     );
   }
