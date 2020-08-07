@@ -62,8 +62,8 @@
 }
 .sidebar img.item {
   width: 40px;
-  margin: 0 3rem 0 0;
-  margin-bottom: 6px;
+  margin: 0 50px 0 0;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 .taskWrapper .taskTitle {

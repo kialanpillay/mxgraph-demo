@@ -38,7 +38,6 @@ import {
   mxCellOverlay,
 } from "mxgraph-js";
 
-
 class mxGraphGridAreaEditor extends Component {
   constructor(props) {
     super(props);
@@ -218,17 +217,24 @@ class mxGraphGridAreaEditor extends Component {
   };
 
   funct = (graph, evt, target, x, y, value, src) => {
-
     var style = new Object();
     style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_IMAGE;
     style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
     style[mxConstants.STYLE_IMAGE] = src;
     style[mxConstants.STYLE_FONTCOLOR] = "#FFFFFF";
-    style[mxConstants.STYLE_SPACING_BOTTOM] = 0;
     graph.getStylesheet().putCellStyle(`item${src}`, style);
 
     var parent = graph.getDefaultParent();
-    let cell = graph.insertVertex(parent, target, "", x, y, 150, 60, `item${src}`);
+    let cell = graph.insertVertex(
+      parent,
+      target,
+      "",
+      x,
+      y,
+      100,
+      100,
+      `item${src}`
+    );
     //this.addOverlays(graph, cell, true);
     graph.setSelectionCell(cell);
     this.selectionChanged(graph, value);
@@ -400,7 +406,7 @@ class mxGraphGridAreaEditor extends Component {
               300,
               400,
               600,
-              30,
+              40,
               "table"
             );
           } finally {
@@ -424,7 +430,7 @@ class mxGraphGridAreaEditor extends Component {
               data-value="Flask"
               src="science-24px.svg"
             ></img>
-             <img
+            <img
               className="item"
               data-value="Microscope"
               src="biotech-24px.svg"
