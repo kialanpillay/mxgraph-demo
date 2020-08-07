@@ -29,13 +29,10 @@
   margin-left: 3px;
   margin-right: 3px;
   background: transparent;
-  border-color: #80c6ee;
+  border-width: 0px;
   cursor: pointer;
 }
-.toolbar button:hover {
-  transition: 1s all;
-  border-color: #8000ff;
-}
+
 .sidebar {
   font-size: 20px;
   text-align: center;
@@ -63,7 +60,7 @@
   border: 1px solid #80c6ee;
   cursor: pointer;
 }
-.sidebar img.task {
+.sidebar img.item {
   width: 40px;
   margin: 0 3rem 0 0;
   margin-bottom: 6px;
