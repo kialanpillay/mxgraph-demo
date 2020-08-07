@@ -37,51 +37,7 @@ import {
   mxCompactTreeLayout,
   mxCellOverlay,
 } from "mxgraph-js";
-// xml-< json
-class mxCellAttributeChange {
-  // constructor
-  constructor(cell, attribute, value) {
-    this.cell = cell;
-    this.attribute = attribute;
-    this.value = value;
-    this.previous = value;
-  }
-  // Method
-  execute() {
-    if (this.cell != null) {
-      var tmp = this.cell.getAttribute(this.attribute);
 
-      if (this.previous == null) {
-        this.cell.value.removeAttribute(this.attribute);
-      } else {
-        this.cell.setAttribute(this.attribute, this.previous);
-      }
-
-      this.previous = tmp;
-    }
-  }
-}
-class JsonCodec extends mxObjectCodec {
-  constructor() {
-    super((value) => {});
-  }
-  encode(value) {
-    const xmlDoc = mxUtils.createXmlDocument();
-    const newObject = xmlDoc.createElement("TaskObject");
-    for (let prop in value) {
-      newObject.setAttribute(prop, value[prop]);
-    }
-    return newObject;
-  }
-  decode(model) {
-    return Object.keys(model.cells)
-      .map((iCell) => {
-        const currentCell = model.getCell(iCell);
-        return currentCell.value !== undefined ? currentCell : null;
-      })
-      .filter((item) => item !== null);
-  }
-}
 
 class mxGraphGridAreaEditor extends Component {
   constructor(props) {
@@ -160,14 +116,15 @@ class mxGraphGridAreaEditor extends Component {
     const { graph } = this.state;
     const tasksDrag = ReactDOM.findDOMNode(
       this.refs.mxSidebar
-    ).querySelectorAll(".task");
+    ).querySelectorAll(".item");
     Array.prototype.slice.call(tasksDrag).forEach((ele) => {
+      const src = ele.getAttribute("src");
       const value = ele.getAttribute("data-value");
       let ds = mxUtils.makeDraggable(
         ele,
         this.graphF,
         (graph, evt, target, x, y) =>
-          this.funct(graph, evt, target, x, y, value),
+          this.funct(graph, evt, target, x, y, value, src),
         this.dragElt,
         null,
         null,
@@ -181,7 +138,6 @@ class mxGraphGridAreaEditor extends Component {
     });
   };
   selectionChanged = (graph, value) => {
-    console.log("visible");
     this.setState({
       createVisile: true,
       currentNode: graph.getSelectionCell(),
@@ -234,14 +190,6 @@ class mxGraphGridAreaEditor extends Component {
     };
 
     var style = new Object();
-    style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_IMAGE;
-    style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
-    style[mxConstants.STYLE_IMAGE] = "science-24px.svg";
-    style[mxConstants.STYLE_FONTCOLOR] = "#FFFFFF";
-    style[mxConstants.STYLE_SPACING_BOTTOM] = 0;
-    graph.getStylesheet().putCellStyle("image", style);
-
-    style = new Object();
     style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
     style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
     style[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_MIDDLE;
@@ -269,9 +217,18 @@ class mxGraphGridAreaEditor extends Component {
     };
   };
 
-  funct = (graph, evt, target, x, y, value) => {
+  funct = (graph, evt, target, x, y, value, src) => {
+
+    var style = new Object();
+    style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_IMAGE;
+    style[mxConstants.STYLE_PERIMETER] = mxPerimeter.RectanglePerimeter;
+    style[mxConstants.STYLE_IMAGE] = src;
+    style[mxConstants.STYLE_FONTCOLOR] = "#FFFFFF";
+    style[mxConstants.STYLE_SPACING_BOTTOM] = 0;
+    graph.getStylesheet().putCellStyle(`item${src}`, style);
+
     var parent = graph.getDefaultParent();
-    let cell = graph.insertVertex(parent, target, "", x, y, 150, 60, "image");
+    let cell = graph.insertVertex(parent, target, "", x, y, 150, 60, `item${src}`);
     //this.addOverlays(graph, cell, true);
     graph.setSelectionCell(cell);
     this.selectionChanged(graph, value);
@@ -411,7 +368,7 @@ class mxGraphGridAreaEditor extends Component {
       })
     );
   };
-  LoadGraph(data) {
+  LoadGraph() {
     var container = ReactDOM.findDOMNode(this.refs.divGraph);
     if (!mxClient.isBrowserSupported()) {
       mxUtils.error("Browser is not supported!", 200, false);
@@ -463,12 +420,12 @@ class mxGraphGridAreaEditor extends Component {
               <h2>Palette</h2>
             </li>
             <img
-              className="task"
+              className="item"
               data-value="Flask"
               src="science-24px.svg"
             ></img>
              <img
-              className="task"
+              className="item"
               data-value="Microscope"
               src="biotech-24px.svg"
             ></img>
