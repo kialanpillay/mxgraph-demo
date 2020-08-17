@@ -38,6 +38,8 @@ import {
   mxCellOverlay,
 } from "mxgraph-js";
 
+import { Popover } from 'antd';
+
 class mxGraphGridAreaEditor extends Component {
   constructor(props) {
     super(props);
@@ -49,11 +51,48 @@ class mxGraphGridAreaEditor extends Component {
       createVisile: false,
       currentNode: null,
       currentTask: "",
+      flask: null,
+      flaskPhoto: null,
+      flaskLink: null,
+      microscope: null,
+      microscopePhoto: null,
+      microscopeLink: null,
     };
     this.LoadGraph = this.LoadGraph.bind(this);
   }
   componentDidMount() {
     this.LoadGraph();
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=description&titles=Round-bottom_flask&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ flask: Object.values(data.query.pages)[0].description }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=pageimages&titles=Round-bottom_flask&pithumbsize=100&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ flaskPhoto: Object.values(data.query.pages)[0].thumbnail.source }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=info&inprop=url&titles=Round-bottom_flask&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ flaskLink: Object.values(data.query.pages)[0].fullurl }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=description&titles=Microscope&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ microscope: Object.values(data.query.pages)[0].description }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=pageimages&titles=Microscope&pithumbsize=100&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ microscopePhoto: Object.values(data.query.pages)[0].thumbnail.source }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
+    fetch('https://wikipedia-cors.herokuapp.com/w/api.php?action=query&prop=info&inprop=url&titles=Microscope&format=json')
+      .then(response => response.json())
+      .then(data => this.setState({ microscopeLink: Object.values(data.query.pages)[0].fullurl }))
+      .catch(error => console.error("Could not get wikipedia data"))
+
   }
 
   addOverlays = (graph, cell) => {
@@ -71,7 +110,7 @@ class mxGraphGridAreaEditor extends Component {
     overlay.offset = new mxPoint(0, 10);
     overlay.addListener(
       mxEvent.CLICK,
-      mxUtils.bind(this, function(sender, evt) {
+      mxUtils.bind(this, function (sender, evt) {
         console.log("load more");
         // addChild(graph, cell);
       })
@@ -93,7 +132,7 @@ class mxGraphGridAreaEditor extends Component {
     // Enable alignment lines to help locate
     mxGraphHandler.prototype.guidesEnabled = true;
     // Alt disables guides
-    mxGuide.prototype.isEnabledForEvent = function(evt) {
+    mxGuide.prototype.isEnabledForEvent = function (evt) {
       return !mxEvent.isAltDown(evt);
     };
     // Specifies if waypoints should snap to the routing centers of terminals
@@ -130,7 +169,7 @@ class mxGraphGridAreaEditor extends Component {
         graph.autoscroll,
         true
       );
-      ds.isGuidesEnabled = function() {
+      ds.isGuidesEnabled = function () {
         return graph.graphHandler.guidesEnabled;
       };
       ds.createDragElement = mxDragSource.prototype.createDragElement;
@@ -146,12 +185,12 @@ class mxGraphGridAreaEditor extends Component {
   createPopupMenu = (graph, menu, cell, evt) => {
     if (cell) {
       if (cell.edge === true) {
-        menu.addItem("Delete connection", null, function() {
+        menu.addItem("Delete connection", null, function () {
           graph.removeCells([cell]);
           mxEvent.consume(evt);
         });
       } else {
-        menu.addItem("Delete", null, function() {
+        menu.addItem("Delete", null, function () {
           graph.removeCells([cell]);
           mxEvent.consume(evt);
         });
@@ -175,7 +214,7 @@ class mxGraphGridAreaEditor extends Component {
     graph.autoSizeCellsOnAdd = true;
 
     const keyHandler = new mxKeyHandler(graph);
-    keyHandler.bindKey(46, function(evt) {
+    keyHandler.bindKey(46, function (evt) {
       if (graph.isEnabled()) {
         const currentNode = graph.getSelectionCell();
         if (currentNode.edge === true) {
@@ -184,7 +223,7 @@ class mxGraphGridAreaEditor extends Component {
       }
     });
     new mxRubberband(graph);
-    graph.getTooltipForCell = function(cell) {
+    graph.getTooltipForCell = function (cell) {
       return cell.getAttribute("data-value");
     };
 
@@ -211,7 +250,7 @@ class mxGraphGridAreaEditor extends Component {
     style[mxConstants.VALID_COLOR] = "#27bf81";
 
     graph.getStylesheet().putDefaultEdgeStyle(style);
-    graph.popupMenuHandler.factoryMethod = function(menu, cell, evt) {
+    graph.popupMenuHandler.factoryMethod = function (menu, cell, evt) {
       return that.createPopupMenu(graph, menu, cell, evt);
     };
   };
@@ -246,14 +285,14 @@ class mxGraphGridAreaEditor extends Component {
     layout.levelDistance = 60;
     layout.nodeDistance = 16;
     layout.parallelEdgeSpacing = 10;
-    layout.isVertexMovable = function(cell) {
+    layout.isVertexMovable = function (cell) {
       return true;
     };
   };
 
   settingConnection = () => {
     const { graph } = this.state;
-    mxConstraintHandler.prototype.intersects = function(
+    mxConstraintHandler.prototype.intersects = function (
       icon,
       point,
       source,
@@ -264,7 +303,7 @@ class mxGraphGridAreaEditor extends Component {
 
     var mxConnectionHandlerUpdateEdgeState =
       mxConnectionHandler.prototype.updateEdgeState;
-    mxConnectionHandler.prototype.updateEdgeState = function(pt, constraint) {
+    mxConnectionHandler.prototype.updateEdgeState = function (pt, constraint) {
       if (pt != null && this.previous != null) {
         var constraints = this.graph.getAllConnectionConstraints(this.previous);
         var nearestConstraint = null;
@@ -293,15 +332,15 @@ class mxGraphGridAreaEditor extends Component {
     };
 
     if (graph.connectionHandler.connectImage == null) {
-      graph.connectionHandler.isConnectableCell = function(cell) {
+      graph.connectionHandler.isConnectableCell = function (cell) {
         return false;
       };
-      mxEdgeHandler.prototype.isConnectableCell = function(cell) {
+      mxEdgeHandler.prototype.isConnectableCell = function (cell) {
         return graph.connectionHandler.isConnectableCell(cell);
       };
     }
 
-    graph.getAllConnectionConstraints = function(terminal) {
+    graph.getAllConnectionConstraints = function (terminal) {
       if (terminal != null && this.model.isVertex(terminal.cell)) {
         return [
           new mxConnectionConstraint(new mxPoint(0.5, 0), true),
@@ -314,7 +353,7 @@ class mxGraphGridAreaEditor extends Component {
     };
 
     // Connect preview
-    graph.connectionHandler.createEdgeState = function(me) {
+    graph.connectionHandler.createEdgeState = function (me) {
       var edge = graph.createEdge(
         null,
         null,
@@ -336,17 +375,17 @@ class mxGraphGridAreaEditor extends Component {
     const { graph, layout } = this.state;
     var toolbar = ReactDOM.findDOMNode(this.refs.toolbar);
     toolbar.appendChild(
-      mxUtils.button("Zoom(+)", function(evt) {
+      mxUtils.button("Zoom(+)", function (evt) {
         graph.zoomIn();
       })
     );
     toolbar.appendChild(
-      mxUtils.button("Zoom(-)", function(evt) {
+      mxUtils.button("Zoom(-)", function (evt) {
         graph.zoomOut();
       })
     );
     toolbar.appendChild(
-      mxUtils.button("Restore", function(evt) {
+      mxUtils.button("Restore", function (evt) {
         graph.zoomActual();
         const zoom = { zoomFactor: 1.2 };
         that.setState({
@@ -356,20 +395,20 @@ class mxGraphGridAreaEditor extends Component {
     );
 
     var undoManager = new mxUndoManager();
-    var listener = function(sender, evt) {
+    var listener = function (sender, evt) {
       undoManager.undoableEditHappened(evt.getProperty("edit"));
     };
     graph.getModel().addListener(mxEvent.UNDO, listener);
     graph.getView().addListener(mxEvent.UNDO, listener);
 
     toolbar.appendChild(
-      mxUtils.button("Undo", function() {
+      mxUtils.button("Undo", function () {
         undoManager.undo();
       })
     );
 
     toolbar.appendChild(
-      mxUtils.button("Redo", function() {
+      mxUtils.button("Redo", function () {
         undoManager.redo();
       })
     );
@@ -417,6 +456,10 @@ class mxGraphGridAreaEditor extends Component {
       mxEvent.disableContextMenu(container);
     }
   }
+
+
+
+
   render() {
     return (
       <div>
@@ -425,16 +468,30 @@ class mxGraphGridAreaEditor extends Component {
             <li>
               <h2>Palette</h2>
             </li>
-            <img
-              className="item"
-              data-value="Flask"
-              src="science-24px.svg"
-            ></img>
-            <img
-              className="item"
-              data-value="Microscope"
-              src="biotech-24px.svg"
-            ></img>
+            <Popover title="Flask" placement="right" content={
+              <div width="100px">
+                {this.state.flaskPhoto && <div><img src={this.state.flaskPhoto} /></div>}
+                <div style={{ marginTop: 5 }}>{this.state.flask || 'Loading'}</div>
+                {this.state.flaskLink && <a href={this.state.flaskLink} target="_blank">More</a>}
+              </div>}>
+              <img
+                className="item"
+                data-value="Flask"
+                src="science-24px.svg"
+              ></img>
+            </Popover>
+            <Popover title="Microscope" placement="right" content={
+              <div width="100px">
+                {this.state.microscopePhoto && <div><img src={this.state.microscopePhoto} /></div>}
+                <div style={{ marginTop: 5 }}>{this.state.microscope || 'Loading'}</div>
+                {this.state.microscopeLink && <a href={this.state.microscopeLink} target="_blank">More</a>}
+              </div>}>
+              <img
+                className="item"
+                data-value="Microscope"
+                src="biotech-24px.svg"
+              ></img>
+            </Popover>
           </ul>
         </div>
         <div className="toolbar" ref="toolbar" />
